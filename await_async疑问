@@ -1,0 +1,61 @@
+```js
+async batchCheckRejectEnable(apps){
+                console.log(apps);
+                const TYPEZERO = 0; // 不能驳回
+                const TYPEONE = 1; // 不能驳回
+                const TYPETWO = 2; // 请求异常
+                const arr = [];
+                for(let i = 0; i < apps.length; i++){
+                    let queryPromise = new Promise((resolve, reject) => {
+                        // '/app-audit-relations/submit-check'
+                        request.get('/app-audit-assign-service/v1/app-audit-assign/admin-type')
+                            .then(res => {
+                                if(res.resultCode === 0){
+                                    resolve({
+                                        type: TYPEZERO
+                                    });
+                                }else{
+                                    resolve({
+                                        type: TYPEONE,
+                                        data: apps[i].NAME
+                                    });
+                                }
+                            })
+                            .catch(() => {
+                                resolve({
+                                    type: TYPETWO,
+                                    data: apps[i].NAME
+                                });
+                            });
+                    });
+                    arr.push(queryPromise);
+                }
+                const resArr = await Promise.all(arr);
+                console.log(resArr);
+                const noArr = [];
+                const errArr = [];
+                for(let i = 0; i < resArr.length; i++){
+                    if(resArr[i].type === TYPEONE){
+                        noArr.push(resArr[i].data);
+                    }
+                    if(resArr[i].type === TYPETWO){
+                        errArr.push(resArr[i].data);
+                    }
+                }
+
+                // 返回时，优先返回有应用不支持驳回的消息
+                if(noArr.length){
+                    let str = '';
+                    if(noArr.length <= 3){
+                        str = noArr.join(', ');
+                    }else{
+                        str = noArr.slice(0,3).join(', ')+ '...';
+                    }
+                    return this.$t('app_audit_management.L2_app_publish_review_list.appNotAllowRejectTip') + str;
+                }
+                if(errArr.length){
+                    return this.$t('app_audit_management.L2_app_publish_review_list.checkAppRejectFailTip');
+                }
+                return false;
+            },
+            ```
