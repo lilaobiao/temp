@@ -1,0 +1,313 @@
+子组件.vue
+
+```html
+<template>
+  <div>
+        <p tyle="padding:20px;margin:20px;border:1px solid #999;">
+            {{obj.name}}
+        </p>
+        <ul style="padding:20px;margin:20px;border:1px solid #999;">
+            非深度监听数组
+            <li v-for="(item, index) in list" :key="index">{{item.name}}</li>
+        </ul>
+        <hr>
+        <p style="padding:20px;margin:20px;border:1px solid #999;">
+            {{obj2.name}}
+        </p>
+        <ul style="padding:20px;margin:20px;border:1px solid #999;">
+            深度监听数组
+            <li v-for="(item, index) in list2" :key="index">{{item.name}}</li>
+        </ul>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'HelloWorld',
+  props: {
+    deepObj: {
+        type: Object,
+        default: () => {}
+    },
+    deepObj2: {
+        type: Object,
+        default: () => {}
+    },
+    deepArr: {
+        type: Array,
+        default: () => []
+    },
+    deepArr2: {
+        type: Array,
+        default: () => []
+    }
+  },
+  data(){
+      return {
+          obj: {name: '测试对象'},
+          obj2: {name: '测试对象2'},
+          list: [],
+          list2: [],
+      }
+  },
+  watch: {
+      deepObj: {
+          handler(newValue){
+              console.log('测试对象', newValue);
+              this.obj = newValue;
+          },
+          immediate: true,
+      },
+      deepObj2: {
+          handler(newValue){
+              console.log('测试对象深度监听', newValue);
+              this.obj2 = newValue;
+          },
+          deep: true,
+          immediate: true,
+      },
+      deepArr: {
+          handler(newValue){
+              console.log('测试数组', newValue);
+              this.list = newValue;
+          },
+          immediate: true,
+      },
+      deepArr2: {
+          handler(newValue){
+              console.log('测试数组深度监听', newValue);
+              this.list2 = newValue;
+          },
+          deep: true,
+          immediate: true,
+      }
+  }
+}
+</script>
+```
+
+
+父组件.vue
+```html
+<template>
+    <div>
+        <div class="d-upload" id="upload" draggable="true">
+            你不妨拖一个文件到这里试试
+        </div>
+        <h1>{{fileName}}</h1>
+
+        <!-- <test-deep :deep-obj="testObj" :deep-arr="testArr" :deep-arr2="testArr"></test-deep> -->
+        <test-deep :deep-obj="testObj" :deep-obj2="testObj2" :deep-arr="testArr" :deep-arr2="testArr2"></test-deep>
+        <p>
+            <button @click="changeObj1">改变对象</button>
+            <button @click="changeObj2">改变对象属性</button>
+            <button @click="changeObj3">清空对象</button>
+            <button @click="changeObj4">修改为具有深层属性的对象</button>
+            <button @click="changeObj5">修改对象的深层属性</button>
+            <button @click="changeObj6">添加新属性的对象</button>
+        </p>
+        <p>
+            <button @click="changeArr1">改变数组</button>
+            <button @click="changeArr2">改变数组个数</button>
+            <button @click="changeArr3">改变数组属性length</button>
+            <button @click="changeArr4">改变数组某一项</button>
+            <button @click="changeArr5">改变数组某一项属性</button>
+            <button @click="changeArr6">为数组某一项添加属性</button>
+            <button @click="changeArr7">为数组某一项修改嵌套属性</button>
+        </p>
+    </div>
+</template>
+
+<script>
+import TestDeep from '@/components/TestDeep'
+
+export default {
+    components: {
+        TestDeep
+    },
+    data(){
+        return {
+            disabled: false,
+            fileName: '没有选择文件',
+            testObj: {
+                name: 'testObj'
+            },
+            testObj2: {
+                name: 'testObj2'
+            },
+            testArr: [],
+            testArr2: [],
+        }
+    },
+    mounted(){
+        const vm = this;
+        var dragover = false;
+        var el = document.querySelector('#upload');
+        el.addEventListener('dragover', function(e){
+            e.preventDefault();
+            dragover = true;
+            console.log('dragover'); // 正常响应
+        });
+
+        el.addEventListener('dragleave', function(e){
+            e.preventDefault();
+            dragover = false;
+            console.log('dragleave'); // 正常响应
+        });
+
+        // el.addEventListener('dropdown', function(e){
+        //     console.log('dropdown');
+        // }, false);
+        el.addEventListener("drop", function(event) {
+            event.preventDefault(); // 禁止浏览器自动打开图片，文本等默认行为
+            dragover = false;
+            // ondrop="drop(event)" ondragover="allowDrop(event)"
+            console.log(event);
+            var data = event.dataTransfer.getData("Text");
+
+            console.log(event.dataTransfer.files[0]);
+            vm.fileName = event.dataTransfer.files[0].name;
+
+            vm.validFile(event.dataTransfer.files[0]).then(res => {
+                console.log(res);
+            }).catch(err => {
+                console.log('捕捉的 reject');
+            })
+            // this.$emit('file', [].slice.call(e.dataTransfer.files).filter(file => {
+            //     const { type, name } = file;
+            //     const extension = name.indexOf('.') > -1
+            //       ? `.${ name.split('.').pop() }`
+            //       : '';
+            //     const baseType = type.replace(/\/.*$/, '');
+            //     return accept.split(',')
+            //       .map(type => type.trim())
+            //       .filter(type => type)
+            //       .some(acceptedType => {
+            //         if (/\..+$/.test(acceptedType)) {
+            //           return extension === acceptedType;
+            //         }
+            //         if (/\/\*$/.test(acceptedType)) {
+            //           return baseType === acceptedType.replace(/\/\*$/, '');
+            //         }
+            //         if (/^[^\/]+\/[^\/]+$/.test(acceptedType)) {
+            //           return type === acceptedType;
+            //         }
+            //         return false;
+            //       });
+            //   }));
+        });
+        // 清空选择的文件
+        // this.$refs.input.value = null;
+    },
+    methods: {
+        validFile(file){
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    if(file.name.split('.').pop() === 'txt'){
+                        resolve(true);
+                    }else{
+                        reject(false);
+                        console.log('reject 后面的代码执行了吗，其实是会比捕捉reject的代码先执行');
+                    }
+                }, 1000);
+            })
+        },
+        changeObj1(){
+            this.testObj = {name: 'changed obj name'}
+            this.testObj2 = {name: 'changed obj name'}
+        },
+        changeObj2(){
+            // 只有deep为true的会触发watch
+            this.testObj.name = 'changed name';
+            this.testObj2.name = 'changed name';
+        },
+        changeObj3(){
+            // 清空对象后，再赋值属性，不能触发更新
+            this.testObj = {};
+            this.testObj2 = {};
+        },
+        changeObj4(){
+            this.testObj = {
+                name: 'changed obj name',
+                data: {
+                    name: '123'
+                }
+            };
+            this.testObj2 = {
+                name: 'changed obj name',
+                data: {
+                    name: '123'
+                }
+            };
+        },
+        changeObj5(){
+            // 只有deep为true的会触发watch
+            this.testObj.data.name = 'deep change name'
+            this.testObj2.data.name = 'deep change name'
+        },
+        changeObj6(){
+            // 非深层属性，都会触发watch
+            this.$set(this.testObj, 'newValue','newValue');
+            this.$set(this.testObj2, 'newValue','newValue');
+        },
+        changeArr1(){
+            this.testArr = [{id: 1, name: 'name1'}];
+            this.testArr2 = [{id: 1, name: 'name1'}];
+        },
+        changeArr2(){
+            this.testArr.push({id: 2, name: 'name2'});
+            this.testArr2.push({id: 2, name: 'name2'});
+        },
+        changeArr3(){
+            this.testArr.length = 1; // 子组件数据无变化
+            console.log(this.testArr); // 数组个数已经改变
+        },
+        changeArr4(){
+            // 均触发watch
+            this.$set(this.testArr, 0, {id: 0, name: 'name0'});
+            this.$set(this.testArr2, 0, {id: 0, name: 'name0'});
+        },
+        changeArr5(){
+            // 子组件展示的name都有变化，但只有deep为true的会触发watch
+            this.$set(this.testArr[0], 'name', 'deep-name0');
+            this.$set(this.testArr2[0], 'name', 'deep-name0');
+        },
+        changeArr6(){
+            // 均触发watch
+            this.$set(this.testArr[0], 'data', {name: 'deepDataName'});
+            this.$set(this.testArr2[0], 'data', {name: 'deepDataName'});
+            console.log(this.testArr[0], this.testArr2[0]);
+        },
+        changeArr7(){
+            // 只有deep为true的会触发watch
+            this.$set(this.testArr[0].data, 'name', 'deepDataName-changed');
+            this.$set(this.testArr2[0].data, 'name', 'deepDataName-changed');
+            console.log(this.testArr[0], this.testArr2[0]);
+        }
+    }
+}
+</script>
+
+<style lang="scss" scoped>
+    .d-upload{
+        background-color: #fff;
+        border: 1px dashed #d9d9d9;
+        border-radius: 6px;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        width: 360px;
+        height: 180px;
+        text-align: center;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    .d-upload:hover{
+        border: 1px dashed #6af;
+    }
+</style>
+
+
+
+
+```
