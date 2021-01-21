@@ -723,34 +723,37 @@ const app = new Koa();
 // app.use(static(__dirname + '/static'));
 app.use(static(__dirname + '/public')); // koa静态资源中间件可以配置多个
 
+// 跨域参考链接：https://www.jb51.net/article/135924.htm
 // 配置跨域白名单
-// app.use(
-//   cors({
-//       origin: function(ctx) { //设置允许来自指定域名请求
-//           const whiteList = [
-//             'http://116.62.243.51:8080',
-//             'http://gzsgsfwq.com:8080',
-//             'http://www.gzsgsfwq.com:8080'
-//           ];
-//           // 注意，如果是直接通过浏览器的url进行访问，header里面没有origin选项
-//           // 有一个host 选项，但是没有http 前缀，且带有端口号
-//           // 这里不考虑 https 的情况
-//           var origin = ctx.request.header.origin || ('http://' + ctx.request.header.host);
-//           console.log(ctx)
-//           // 局域网和本地访问
-//           if(whiteList.includes(origin) || origin.startsWith('http://192.168')
-//            || origin.startsWith('http://127.0.0.1') || origin.startsWith('http://localhost')){
-//             return origin //注意，这里域名末尾不能带/，否则不成功
-//           }
-//           return 'http://localhost:3000' //默认允许本地请求3000端口可跨域
-//       },
-//       maxAge: 5, //指定本次预检请求的有效期，单位为秒。
-//       credentials: true, //是否允许发送Cookie
-//       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], //设置所允许的HTTP请求方法
-//       allowHeaders: ['Content-Type', 'Authorization', 'Accept'], //设置服务器支持的所有头信息字段
-//       exposeHeaders: ['WWW-Authenticate', 'Server-Authorization'] //设置获取其他自定义字段
-//   })
-// );
+app.use(
+  cors({
+      origin: function(ctx) { //设置允许来自指定域名请求
+          const whiteList = [
+            'https://www.liguixing.com',
+            'https://www.baidu.com:8080'
+          ];
+          // 注意，如果是直接通过浏览器的url进行访问，header里面没有origin选项
+          // 有一个host 选项，但是没有http 前缀，且带有端口号
+          // 这里不考虑 https 的情况
+          var origin = ctx.request.header.origin || ('http://' + ctx.request.header.host);
+          // console.log(ctx)
+          // 局域网和本地访问
+          if(whiteList.includes(origin) || origin.startsWith('http://192.168')
+           || origin.startsWith('http://127.0.0.1') || origin.startsWith('http://localhost')){
+            console.log('origin匹配成功：'+ origin);
+            return origin //注意，这里域名末尾不能带/，否则不成功
+          }
+          return 'http://localhost:3000' //默认允许本地请求3000端口可跨域
+      },
+      maxAge: 30, //指定预检请求的有效期，单位为秒。
+      credentials: true, //是否允许发送Cookie
+      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], //设置所允许的HTTP请求方法
+      // 类似这样的错误Request header field Authorization is not allowed by Access-Control-Allow-Headers，在这里设置
+      allowHeaders: ['Content-Type', 'Authorization', 'Accept', 'x-hw-csrftoken', 'x-cse-context'], //设置服务器支持的所有头信息字段
+      // 请求头中通过Access-Control-Expose-Headers 指定的头部字段
+      exposeHeaders: ['WWW-Authenticate', 'Server-Authorization'] //设置获取其他自定义字段
+  })
+);
 
 // middlewares
 app.use(bodyparser({
