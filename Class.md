@@ -116,13 +116,35 @@ Bar.classMethod();
 
 ```
 
+
+静态方法的实现其实跟下面类似
+```js
+class Foo {  
+    static classMethod() {    
+        return 'hello';  
+    } 
+}
+
+// 等同于
+function Foo(){}
+Foo.classMethod = function(){
+    return 'hello';
+}
+```
+
 ### 静态属性
 
 静态属性指的是Class本身的属性，即Class.propname，而不是定义在实例对象（this）上的属性。
 ```js
 class Foo { }
-Foo.prop = 1; Foo.prop // 1
+Foo.prop = 1; 
+Foo.prop // 1
+
+// 语法等同于
+function Foo(){}
+Foo.prop = 1
 ```
+
 目前，只有这种写法可行，因为ES6明确规定，Class内部只有静态方法，没有静态属性。
 ```js
 // 以下两种写法都无效 
