@@ -457,3 +457,55 @@ hanoiTower(4,'A','B','C')
 // 0  10   2340
 // 0  0   12340
 
+
+// lk200-岛屿数量
+ var dyArr1 = [
+            [1,1,1,1,0],
+            [1,1,0,1,0],
+            [1,1,0,0,0],
+            [0,0,0,0,0],
+        ];
+        var dyArr2 = [
+            [1,1,1,1,0],
+            [1,1,0,0,0],
+            [0,0,1,0,0],
+            [0,0,0,1,1],
+        ];
+
+
+
+        // 求岛屿数量
+        // 思路，只要是1就看做岛屿，岛屿数量加1，然后将岛屿蔓延，蔓延时对遍历过的进行标记，直到遇到的不是岛屿
+        let stepNum = 0;
+        function numIslands(grid){
+            if(grid.length === 0 || grid[0].length === 0){
+                return 0;
+            }
+            let m = grid.length;
+            let n = grid[0].length;
+            let res = 0
+            let visited = Array.from({length: m}).map(item => Array.from({length: n}).fill(0));
+            for (let i = 0; i < m; i++){
+                for (let j = 0; j < n; j++){
+                    if (grid[i][j] === 1 && visited[i][j] === 0){
+                        DFS(grid, visited, i, j);
+                        res += 1;
+                    }
+                }
+            }
+            return res
+        }
+        function DFS(grid, visited, x, y, step){
+            stepNum += 1;
+            if (x < 0 || x >= grid.length) return;
+            if (y < 0 || y >= grid[0].length) return;
+            if (grid[x][y] !== 1 || visited[x][y] === 1 ) return;
+            visited[x][y] = 1;
+            DFS(grid, visited, x+1, y);
+            DFS(grid, visited, x-1, y);
+            DFS(grid, visited, x, y+1);
+            DFS(grid, visited, x, y-1);
+        }
+        console.log(numIslands(dyArr1), stepNum);
+        stepNum = 0;
+        console.log(numIslands(dyArr2), stepNum);
