@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=script, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1><a href="https://blog.csdn.net/a258831020/article/details/46929965/">https://blog.csdn.net/a258831020/article/details/46929965/</a></h1>
+    <script>
+        // 验证YYYY-MM-DD或YYYY/MM/DD的日期的合法性
+        const isDateStrValid = function(dateStr, split = '-'){
+            let dateRegex = /^(([0-9]{3}[1-9]|[0-9]{2}[1-9][0-9]{1}|[0-9]{1}[1-9][0-9]{2}|[1-9][0-9]{3})-(((0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01]))|((0[469]|11)-(0[1-9]|[12][0-9]|30))|(02-(0[1-9]|[1][0-9]|2[0-8]))))|((([0-9]{2})(0[48]|[2468][048]|[13579][26])|((0[48]|[2468][048]|[3579][26])00))-02-29)$/;
+            if(split === '/'){
+                dateRegex = /^(([0-9]{3}[1-9]|[0-9]{2}[1-9][0-9]{1}|[0-9]{1}[1-9][0-9]{2}|[1-9][0-9]{3})\/(((0[13578]|1[02])\/(0[1-9]|[12][0-9]|3[01]))|((0[469]|11)\/(0[1-9]|[12][0-9]|30))|(02\/(0[1-9]|[1][0-9]|2[0-8]))))|((([0-9]{2})(0[48]|[2468][048]|[13579][26])|((0[48]|[2468][048]|[3579][26])00))\/02\/29)$/;
+            }
+            // var yyObj = format.match(/Y{1,4}/);
+            // var mmObj = format.match(/M{1,2}/);
+            // var ddObj = format.match(/D{1,2}/);
+            // console.log(yyObj, mmObj, ddObj);
+            // console.log(yyObj.index, mmObj.index, ddObj.index);
+            // console.log(yyObj[0], mmObj[0], ddObj[0]);
+            return dateRegex.test(dateStr);
+        };
+
+        // export {
+        //     isDateStrValid,
+        // };
+
+        function isValidDateStr(dateStr, format = 'YYYY-MM-DD'){
+            // 注意这里的索引，index为奇数的，月份和日期不需要补0
+            var formats = ['YYYY-MM-DD', 'YYYY-M-D', 'YYYY/MM/DD', 'YYYY/M/D', 'YYYY年MM月DD日', 'YYYY年M月D日'];
+            var index = formats.indexOf(format);
+
+            var specialFormats = ['YYYY-M?-D?', 'YYYY/M?/D?', 'YYYY年M?月D?日'];
+            var specialIndex = specialFormats.indexOf(format);
+            // 不支持的验证格式，返回false
+            if(index < 0 && specialIndex < 0){
+                return false;
+            }
+            
+            // 日期和月份的0是否需要补齐
+            var fill = '0?';
+            if(index >= 0){
+                fill = index%2 === 0 ? '0' : '';
+            }
+
+            // 普通年份
+            var cy = '([0-9]{3}[1-9]|[0-9]{2}[1-9][0-9]{1}|[0-9]{1}[1-9][0-9]{2}|[1-9][0-9]{3})';
+            // 闰年
+            var ly = '(([0-9]{2})(0[48]|[2468][048]|[13579][26])|((0[48]|[2468][048]|[3579][26])00))';
+            // 31天的月份
+            var ml = `(${fill}[13578]|1[02])`;
+            // 30天的月份
+            var ms = `(${fill}[469]|11)`;
+            // 2月
+            var m2 = `(${fill}2)`;
+            // 31天
+            var dl = `(${fill}[1-9]|[12][0-9]|3[01])`;
+            // 30天
+            var ds = `(${fill}[1-9]|[12][0-9]|30)`;
+            // 28天
+            var d28 = `(${fill}[1-9]|[1][0-9]|2[0-8])`;
+            
+            let regex = `^((${cy}年((${ml}月${dl}日)|(${ms}月${ds}日)|(${m2}月${d28}日)))|(${ly}年${m2}月29日))$`;
+            
+            if(index === 0 || index === 1 || specialIndex === 0){
+                regex = regex.replace(/年/g, '-').replace(/月/g, '-').replace(/日/g, '');
+            }
+            if(index === 2 || index === 3 || specialIndex === 1){
+                regex = regex.replace(/年/g, '\/').replace(/月/g, '\/').replace(/日/g, '');
+            }
+            
+
+            const reg = new RegExp(regex);
+            console.log(reg);
+            console.log(reg.test(dateStr));
+
+            return reg.test(dateStr);
+        }
+
+        // isValidDateStr('2002-02-29', 'YYYY-MM-DD');
+        // isValidDateStr('2004-02-29', 'YYYY-MM-DD');
+        // isValidDateStr('2004/02/29', 'YYYY/MM/DD');
+
+        // isValidDateStr('2002-02-29', 'YYYY-M-DD');
+        // isValidDateStr('2004-2-29', 'YYYY-MM-DD');
+        // isValidDateStr('2004/2/29', 'YYYY/M/D');
+        // isValidDateStr('2004/04/31', 'YYYY/M?/D?');
+        // isValidDateStr('2004/2/29', 'YYYY/M?/D?');
+        // isValidDateStr('2004/2/9', 'YYYY/M?/D?');
+        // isValidDateStr('2002/04/31', 'YYYY/M?/D?');
+        // isValidDateStr('2002/2/29', 'YYYY/M?/D?');
+        // isValidDateStr('2004/2/28', 'YYYY/M?/D?');
+        // isValidDateStr('2004-02-29');
+    </script>
+</body>
+</html>
