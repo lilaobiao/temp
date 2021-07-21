@@ -180,3 +180,148 @@ $ git branch -vv
 这里可以看到 iss53 分支正在跟踪 origin/iss53 并且 “ahead” 是 2，意味着本地有两个提交还没有推送到服务器上。 也能看到 master 分支正在跟踪 origin/master 分支并且是最新的。 接下来可以看到 serverfix 分支正在跟踪 teamone 服务器上的 server-fix-good 分支并且领先 3 落后 1， 意味着服务器上有一次提交还没有合并入同时本地有三次提交还没有推送。 最后看到 testing 分支并没有跟踪任何远程分支。
 
 git pull 在大多数情况下它的含义是一个 git fetch 紧接着一个 git merge 命令。
+    
+    
+## 实用操作
+    
+同步代码
+Git stash
+Git pull
+Git stash pop
+Git checkout -b xxxx
+
+开始开发
+
+
+提交代码
+Git add .
+Git commit -m ‘xxx’
+// 修改最近一次提交信息
+git commit —amend -m “xxx”
+
+// 将分支推送到远程
+git push origin xxx 
+// 删除远程分支
+git push —delete origin xxx
+git push origin —delete xxx
+
+// 查看全部分支(包含本地和远程) 
+git branch -a
+// 查看本地分支
+git branch
+// 清理本地无效分支(远程已删除本地没删除的分支): 
+git fetch -p
+// 拉取远程分支
+git fetch origin dev
+// 拉取远程分支并在本地建立对应分支，切换到该分支
+git checkout -b dev(本地分支名称) origin/dev(远程分支名称)
+git checkout -b feature/v20210609-sg-api-debug origin/feature/v20210609-sg-api-debug
+
+// 把某个分支上的内容都拉取到本地
+git pull origin dev(远程分支名称)
+
+
+到提交的远程分支下创建合并请求 create request merge
+
+
+// 合并远程分支
+git fetch origin xxxx
+git merge origin xxxx
+
+git merge xxx 合并本地分支
+git merge --abort 取消合并
+git merge --abort 选项会尝试恢复到你运行合并前的状态。 但当运行命令前，在工作目录中有未储藏、未提交的修改时它不能完美处理，除此之外它都工作地很好。
+
+
+git merge -Xignore-all-space xxx  完全忽略空白修改
+git merge -Xignore-space-change xxx  将一个空白符与多个连续的空白字符视作等价的
+
+
+
+如何把本地的修改移动到另一个分支，比如，你不小心在master分支上开发了部分代码，但你提交时不想提交到master，需要新建一个分支提交
+如果从未提交
+先暂存修改
+git stash
+然后切换到新分支
+git checkout -b newbranchname
+然后在新分支直接应用更改
+git stash pop
+
+
+如果更改已提交：
+然后创建一个分支：
+git checkout -b newbranch
+结帐回master分支：
+git checkout master
+重置为先前的提交：
+git reset --hard head^1
+
+
+git restore指令使得在工作空间但是不在暂存区的文件撤销更改，还没有add 的修改，Changes not staged for commit:
+git restore . 可以撤销所有修改的文件，但是不会删除新加的文件
+
+git restore --staged的作用是将暂存区的文件从暂存区撤出，但不会更改文件的内容。 用于撤销已经add，但是还没有commit的修改
+https://blog.csdn.net/qq_38158479/article/details/106972138
+
+C3-9  2:15 - 3:00
+债券-每日营运事项-每日钱货对账
+
+git 合并多次commit
+
+git rebase -i HEAD~5
+选取最近的5笔 commit
+
+如何合并失败，可以撤销合并
+git rebase —abort
+
+git push -f 把合并推送到远程
+https://www.cnblogs.com/zhaoyingjie/p/10259715.html
+
+git log
+git rebase -i HEAD~4 // 除了第一次，其他的都选fixup
+git commit --amend
+
+hotfix/v20210713-fix-srpc-timeout
+hotfix/v20210714-set-srpc-timeout
+
+
+-i 是交互式的意思，胡扯
+-i, --interactive let the user edit the list of commits to rebase
+
+
+pick：正常选中
+reword：选中，并且修改提交信息；
+edit：选中，rebase时会暂停，允许你修改这个commit（参考这里）
+squash：选中，会将当前commit与上一个commit合并
+fixup：与squash相同，但不会保存当前commit的提交信息
+exec：执行其他shell命令
+
+
+
+体验OK之后合代码，
+
+测试环境给测试体验
+
+
+
+场景3
+在分支1开发了部分代码，并且已经commit了，但我想在分支2提交（分支2也有了一部分代码），并且在这之前还要合并master分支的代码
+
+先add commit把分支1处理干净
+git checkout master
+Git pull
+Git checkout branch2
+git merge master //这个时候可能有冲突，把冲突解决掉，先git add，再git commit
+
+Git merge branch1 // 有冲突
+
+Auto-merging static/src/pages/risk-oss/pages/fundHomepageConfig/submodule/theme/ThemeDetail.vue
+Auto-merging static/src/pages/risk-oss/pages/fundHomepageConfig/submodule/selected/SelectedDetail.vue
+Auto-merging server/src/config/SG/development.js
+CONFLICT (content): Merge conflict in server/src/config/SG/development.js
+Auto-merging server/src/config/CN/development.js
+Automatic merge failed; fix conflicts and then commit the result.
+
+解决掉冲突，先git add .再git commit -m “”
+Git merge branch1 // 解决完冲突再merge
+Already up to date.
