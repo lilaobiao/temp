@@ -192,3 +192,218 @@ const test = async function(allowConcurrency){
 }
 
 test(true);
+
+
+
+
+const getDeepValue = function(obj, keys){
+    const keyArr = keys.split('.');
+    let value = obj[keyArr.shift()];
+    while(value && keyArr.length){
+        value = value[keyArr.shift()];
+    }
+    return value;
+}
+
+const getDataMultipleTimes = async function (method, params, requestOptions, resultOptions){
+    const {
+        methodCtx,
+        restParams,
+        pageKey,
+        pageSize,
+        pageStart,
+        allowConcurrency,
+        concurrencyMax,
+        paramsPosition,
+    } = Object.assign({
+        methodCtx: null, // 请求方法执行的上下文
+        restParams: [], // 请求方法传递的剩余参数
+        paramsPosition: 0, // params参数位置
+        pageKey: 'page', // page变量字段
+        pageSize: 1, // 每次请求多少条数据
+        pageStart: 1, // 开始索引，有的是1，有的是0
+        allowConcurrency: true, // 是否允许并发
+        concurrencyMax: Number.POSITIVE_INFINITY // 单次请求最大并发量
+    }, requestOptions);
+
+    const {
+        resultTotalKey,
+        resultListKey,
+        successCondition,
+    } = Object.assign({
+        successCondition: ['result', 0], // 判断请求成功的条件
+        resultTotalKey: 'total', // 获取列表总数的字段
+        resultListKey: 'list', // 获取列表数据的字段
+    }, resultOptions);
+    const [successKey, successValue] = successCondition;
+
+    // const requestData = method.bind(methodCtx);
+
+    
+    // 请求函数，每请求一次，pageKey自动加1
+    let reqPage = pageStart - 1;
+    const requestData = async function(){
+        const reqParams =  {
+            ...params,
+            [pageKey]: ++reqPage
+        }
+        const finallyParams = [
+            ...restParams.slice(0, paramsPosition),
+            reqParams,
+            ...restParams.slice(paramsPosition)
+        ];
+        return await method.call(methodCtx, ...finallyParams);
+    }
+
+    // 处理请求结果
+    let allData = [];
+    const handleResult = function(result){
+        if(getDeepValue(result, successKey) !== successValue){
+            throw result;
+        }
+        allData = allData.concat(getDeepValue(result, resultListKey));
+    }
+    
+
+    try{
+        params[pageKey] = pageStart;
+        // const finallParams = getFinallyParams(params, restParams, paramsPosition);
+        // const result = await requestData(...finallParams);
+        const result = await requestData();
+        handleResult(result);
+
+        const total = Number(getDeepValue(result, resultTotalKey));
+        // 需要请求的次数
+        let allTimes = Math.ceil(total / pageSize);
+        if(allTimes === 1){
+            return allData;
+        }
+
+        // 需要请求多次
+        if(!allowConcurrency){
+            while(--allTimes > 0){
+                // params[pageKey] += 1;
+                // const finallParams = getFinallyParams(params, restParams, paramsPosition);
+                // const result = await requestData(...finallParams);
+                const result = await requestData();
+                // if(getDeepValue(result, successKey) !== successValue){
+                //     throw result; // throw result之后，循环自动终止
+                // }
+                // allData = allData.concat(getDeepValue(result, resultListKey));
+                handleResult(result);
+            }
+            return allData;
+        }else{
+            let results = [];
+            // 如果需要请求的次数大于最高并发数
+            if(--allTimes > concurrencyMax){
+                const promiseTimes = Math.ceil(allTimes / concurrencyMax);
+                // 分批次逐步请求
+                for(let j = 0; j < promiseTimes; j++){
+                    const requestArr = [];
+                    for(let i = 0; i < concurrencyMax && allTimes > 0; i++){
+                        allTimes--;
+                        // const currentPage = j * concurrencyMax + i + 1;
+                        // const finallParams = getFinallyParams(
+                        //     {...params,[pageKey]: params[pageKey] + currentPage},
+                        //     restParams,
+                        //     paramsPosition
+                        // );
+                        // console.log('finallParams', finallParams);
+                        // requestArr.push(requestData(...finallParams));
+                        requestArr.push(requestData());
+                    }
+                    const timeResult = await Promise.all(requestArr);
+                    results = results.concat(timeResult);
+                }
+            }else{
+                const requestArr = [];
+                for(let i = 0; i < allTimes; i++){
+                    // const finallParams = getFinallyParams(
+                    //     {...params,[pageKey]: params[pageKey] + i + 1},
+                    //     restParams,
+                    //     paramsPosition
+                    // );
+                    // console.log('finallParams', finallParams);
+                    // requestArr.push(requestData(...finallParams));
+                    requestArr.push(requestData());
+                }
+                results = await Promise.all(requestArr);
+            }
+            // for(let i = 0; i < results.length; i++){
+            //     const result = results[i];
+            //     // if(getDeepValue(result, successKey) !== successValue){
+            //     //     throw result;
+            //     // }
+            //     // allData = allData.concat(getDeepValue(result, resultListKey));
+            //     handleResult(result);
+            // }
+            results.forEach(handleResult);
+            return allData;
+        }
+    }catch(err){
+        // 确定的错误
+        // 1.await的时候出错了，这里能捕捉到，也能抛出去
+        // 2.throw的result，这里能捕获到，也能抛出去
+        // pageSize 测试通过
+        console.log('\r\n allowConcurrency err', err);
+        throw err;
+    }
+};
+
+const test = async function(allowConcurrency){
+    let startTime = Date.now();
+    try{
+        const params = {
+            total: 20,
+            pageSize: 2,
+        }
+        const requestOptions = {
+            pageKey: 'page',
+            pageSize: 2,
+            pageStart: 1,
+            allowConcurrency: allowConcurrency,
+            concurrencyMax: 2,
+            methodCtx: testService,
+            restParams: [{}, '自定义测试参数'],
+            paramsPosition: 1,
+        }
+        const data = await getDataMultipleTimes(
+            testService.testMethod,
+            params,
+            requestOptions
+        );
+        console.log('\r\nall data', data);
+        console.log(Date.now() - startTime);
+    }catch(err){
+        console.log('\r\ntest err', err);
+        console.log(Date.now() - startTime);
+    }
+}
+
+test(true);
+
+// 剩余参数是可以的
+// function aa(...params){
+//     console.log(params); // [1, 2, 3, 4]
+// }
+// aa(1, ...[2,3,4]);
+
+// 异步方法通过bind能改变this指向
+
+function testThrowErrInForEach(){
+    const inner = function(i){
+        if(i === 3){
+            throw i
+        }else{
+            console.log(i);
+        }
+    };
+    try{
+        
+        [1,2,3,4,5].forEach(inner);
+    }catch(err){
+        console.log(err)
+    }
+}
+// testThrowErrInForEach(); // 1,2,3
